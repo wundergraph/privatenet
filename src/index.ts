@@ -1,6 +1,7 @@
 import e from "express";
 import dns from "dns"
 import bodyParser from "body-parser";
+import ping from "ping";
 
 const port = 8888;
 
@@ -94,9 +95,11 @@ const appsHandler = async function (req: e.Request, res: e.Response) {
         })
     }
 
-    const resultJson = JSON.stringify(results, null, 2);
+    const t = JSON.stringify(results, null, 4)
+    console.log(t)
 
-    res.send(resultJson);
+    res.header("Content-Type", "application/json");
+    res.send(t);
 }
 
 const app = e();
@@ -112,7 +115,7 @@ app.get('/ping', function (req: e.Request, res: e.Response) {
     res.send(`
         <form action="/ping" method="post">
             <label for="addr">Addr:</label>
-            <input type="text" id="addr" name="addr" value="https://google.com">
+            <input type="text" id="addr" name="addr" value="google.com">
             <input type="submit" value="Submit">
         </form>
     `);
@@ -120,8 +123,12 @@ app.get('/ping', function (req: e.Request, res: e.Response) {
 
 const urlencodedParser = bodyParser.urlencoded({ extended: false })
 
-app.post('/ping', urlencodedParser, function (req: e.Request, res: e.Response) {
-    res.send(req.body.addr)
+app.post('/ping', urlencodedParser, async function (req: e.Request, res: e.Response) {
+    const host = req.body.addr;
+    const pingResults = await ping.promise.probe(host);
+
+    res.header("Content-Type", "application/json");
+    res.send(JSON.stringify(pingResults, null, 4));
 })
 
 app.get('/apps', appsHandler)
